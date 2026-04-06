@@ -1680,7 +1680,7 @@ canvas {
     <!-- Bridge -->
     <p style="font-size:13px; font-weight:600; color:var(--text); margin-bottom:10px; text-align:left;">The Solution...</p>
     <div class="opening-bridge">
-      <strong>TL1A</strong> is the mechanism pharma spent $19.4 billion validating, and Spyre built a better version. TL1A sits upstream of both inflammatory and fibrotic pathways in IBD. Spyre’s SPY002 has a half-life of ~75 days, 3× longer than first-gen anti-TL1As, enabling quarterly dosing and combination therapy in a single injection.
+      TL1A sits upstream of both inflammatory and fibrotic pathways in IBD. Spyre’s SPY002 has a half-life of ~75 days, 3× longer than first-gen anti-TL1As, enabling quarterly dosing and combination therapy in a single injection.
     </div>
 
     <!-- Facts -->
@@ -4773,11 +4773,18 @@ const DOSE_SPY = 91;   // quarterly dosing interval (~13 weeks)
 const TOTAL_DAYS = 360;
 const THRESHOLD = 50;  // % receptor occupancy, therapeutic threshold
 
-const C_FG    = '#F97316';
-const C_SPY   = '#2DD4BF';
-const C_GRID  = 'rgba(0,0,0,0.07)';
-const C_THRESH = 'rgba(0,0,0,0.35)';
-const C_AXIS  = 'rgba(0,0,0,0.18)';
+const C_FG  = '#F97316';
+const C_SPY = '#2DD4BF';
+function _dk() { return document.body && document.body.classList.contains('dark'); }
+function C_BG()     { return _dk() ? '#111318' : '#FFFFFF'; }
+function C_GRID()   { return _dk() ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.07)'; }
+function C_THRESH() { return _dk() ? 'rgba(255,255,255,0.50)' : 'rgba(0,0,0,0.35)'; }
+function C_AXIS()   { return _dk() ? 'rgba(255,255,255,0.25)' : 'rgba(0,0,0,0.18)'; }
+function C_TXT1()   { return _dk() ? 'rgba(255,255,255,0.55)' : 'rgba(0,0,0,0.50)'; }
+function C_TXT2()   { return _dk() ? 'rgba(255,255,255,0.38)' : 'rgba(0,0,0,0.40)'; }
+function C_TTP_BG() { return _dk() ? 'rgba(22,27,34,0.96)' : 'rgba(255,255,255,0.97)'; }
+function C_TTP_BD() { return _dk() ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.12)'; }
+function C_TTP_TX() { return _dk() ? 'rgba(230,237,243,0.95)' : 'rgba(26,29,35,0.92)'; }
 
 // ═══════════════════════════════════════════════════════
 //  BUILD CURVE DATA
@@ -4899,7 +4906,7 @@ function draw() {
 }
 
 function drawBG() {
-  ctx.fillStyle = '#FFFFFF';
+  ctx.fillStyle = C_BG();
   ctx.fillRect(0, 0, W, H);
   // subtle inner glow
   const g = ctx.createRadialGradient(W * 0.5, H * 0.4, 0, W * 0.5, H * 0.5, Math.max(W, H) * 0.7);
@@ -4910,7 +4917,7 @@ function drawBG() {
 }
 
 function drawGrid() {
-  ctx.strokeStyle = C_GRID;
+  ctx.strokeStyle = C_GRID();
   ctx.lineWidth = 1;
   // Horizontal
   [0, 25, 50, 75, 100].forEach(o => {
@@ -4931,7 +4938,7 @@ function drawGrid() {
 function drawThreshold() {
   const y = occToY(THRESHOLD);
   ctx.save();
-  ctx.strokeStyle = C_THRESH;
+  ctx.strokeStyle = C_THRESH();
   ctx.lineWidth = 1.5;
   ctx.setLineDash([7, 6]);
   ctx.beginPath();
@@ -4943,7 +4950,7 @@ function drawThreshold() {
   // Right-side label
   ctx.save();
   ctx.font = '500 10px Inter, sans-serif';
-  ctx.fillStyle = 'rgba(0,0,0,0.45)';
+  ctx.fillStyle = C_TXT1();
   ctx.textAlign = 'left';
   // Put label to the RIGHT of the plot area, or above line on right end
   const labelText = 'Therapeutic Threshold (~50%)';
@@ -5058,7 +5065,7 @@ function drawDoseMarkers(maxDay) {
       ctx.globalAlpha = alphaSPY;
       // Label "Q" for quarterly injection
       ctx.font = '600 8px Inter, sans-serif';
-      ctx.fillStyle = '#FFFFFF';
+      ctx.fillStyle = C_BG();
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       ctx.fillText('Q', x, PAD.top - 20);
@@ -5127,7 +5134,7 @@ function drawLegend() {
 }
 
 function drawAxes() {
-  ctx.strokeStyle = C_AXIS;
+  ctx.strokeStyle = C_AXIS();
   ctx.lineWidth = 1;
   ctx.beginPath();
   ctx.moveTo(PAD.left, PAD.top);
@@ -5138,7 +5145,7 @@ function drawAxes() {
 
 function drawAxisLabels() {
   ctx.font = '400 10px Inter, sans-serif';
-  ctx.fillStyle = 'rgba(0,0,0,0.50)';
+  ctx.fillStyle = C_TXT1();
 
   // Y-axis values
   ctx.textAlign = 'right';
@@ -5152,27 +5159,27 @@ function drawAxisLabels() {
   ctx.rotate(-Math.PI / 2);
   ctx.textAlign = 'center';
   ctx.font = '400 10px Inter, sans-serif';
-  ctx.fillStyle = 'rgba(0,0,0,0.45)';
+  ctx.fillStyle = C_TXT1();
   ctx.fillText('Receptor Occupancy (%)', 0, 0);
   ctx.restore();
 
   // X-axis day labels
   ctx.textAlign = 'center';
-  ctx.fillStyle = 'rgba(0,0,0,0.50)';
+  ctx.fillStyle = C_TXT1();
   ctx.font = '400 10px Inter, sans-serif';
   [0, 90, 180, 270, 360].forEach(d => {
     ctx.fillText('Day ' + d, dayToX(d), PAD.top + plotH + 15);
   });
 
   // Quarter labels
-  ctx.fillStyle = 'rgba(0,0,0,0.30)';
+  ctx.fillStyle = C_TXT2();
   ctx.font = '400 9px Inter, sans-serif';
   ['Q1', 'Q2', 'Q3', 'Q4'].forEach((q, i) => {
     ctx.fillText(q, dayToX(45 + i * 90), PAD.top + plotH + 27);
   });
 
   // X-axis title
-  ctx.fillStyle = 'rgba(0,0,0,0.45)';
+  ctx.fillStyle = C_TXT1();
   ctx.font = '400 10px Inter, sans-serif';
   ctx.fillText('Time (Days)', PAD.left + plotW / 2, PAD.top + plotH + 42);
 }
@@ -5185,7 +5192,7 @@ function drawCursor(day) {
 
   // Vertical line
   ctx.save();
-  ctx.strokeStyle = 'rgba(0,0,0,0.12)';
+  ctx.strokeStyle = C_TTP_BD();
   ctx.lineWidth = 1;
   ctx.setLineDash([4, 4]);
   ctx.beginPath();
@@ -5206,15 +5213,15 @@ function drawCursor(day) {
 
   // Box
   ctx.save();
-  ctx.fillStyle = 'rgba(255,255,255,0.97)';
-  ctx.strokeStyle = 'rgba(0,0,0,0.12)';
+  ctx.fillStyle = C_TTP_BG();
+  ctx.strokeStyle = C_TTP_BD();
   ctx.lineWidth = 1;
   rrect(ctx, ttX, ttY, ttW, ttH, 7);
   ctx.fill(); ctx.stroke();
 
   let ry = ttY + pad + 11;
   ctx.font = '600 11px Inter, sans-serif';
-  ctx.fillStyle = 'rgba(26,29,35,0.92)';
+  ctx.fillStyle = C_TTP_TX();
   ctx.textAlign = 'left';
   ctx.fillText('Day ' + day, ttX + pad, ry); ry += 17;
 
