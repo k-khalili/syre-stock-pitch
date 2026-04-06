@@ -3225,9 +3225,10 @@ function transitionTo(screenId, isBack) {
     setTimeout(() => {
       oldEl.classList.remove('active');
       oldEl.scrollTop = 0; // reset outgoing screen too
-      // Reset occupancy sim if leaving molecule screen
+      // Stop occupancy sim loop when leaving molecule screen
       if (window.currentScreen === 'shared_molecule' && window._occReady) {
         window._occReady = false;
+        if (window._occCancelLoop) window._occCancelLoop();
       }
       // Activate new
       window.activateScreen(screenId, newEl);
@@ -4032,6 +4033,9 @@ function buildReportSensTable() {
 // Expose to window for onclick handlers
 window.setMode = setMode;
 window.replayAnimation = function() { replay(); };
+window._occCancelLoop = function() {
+  if (animFrame) { cancelAnimationFrame(animFrame); animFrame = null; }
+};
 
 })();
 </script>
@@ -4751,15 +4755,7 @@ window.replayAnimation = function() { replay(); };
   var origOpen = window.openFullReport;
   window.openFullReport = function() {
     if(origOpen) origOpen();
-    setTimeout(startReportSim, 200);
-  };
-
-})();
-</script>
-
-
-<script>
-/* ===== OCCUPANCY SIM JS ===== */
+    /* ===== OCCUPANCY SIM JS ===== */
 (function() {
 // Occupancy sim, exposes setMode, replayAnimation to window for onclick handlers
 
@@ -5352,19 +5348,27 @@ function updateCounters(maxDay) {
 // ═══════════════════════════════════════════════════════
 function startAnimation() {
   if (animFrame) cancelAnimationFrame(animFrame);
+  // Reset to fresh state so re-entry always starts from beginning
   drawDay = 0;
   animating = true;
-  function step() {
-    drawDay = Math.min(drawDay + ANIM_SPD, TOTAL_DAYS);
-    draw();
-    if (drawDay < TOTAL_DAYS) {
-      animFrame = requestAnimationFrame(step);
-    } else {
-      animating = false;
-      draw();
+  mode = 'both';
+  alphaFG = 1; alphaSPY = 1;
+  targetFG = 1; targetSPY = 1;
+  // Continuous loop — keeps canvas live for theme changes, hover, and mode switches
+  function loop() {
+    if (animating) {
+      drawDay = Math.min(drawDay + ANIM_SPD, TOTAL_DAYS);
+      if (drawDay >= TOTAL_DAYS) animating = false;
     }
+    // Also advance fade transitions here so they don't need their own rAF
+    const spd = 0.18;
+    let fadeBusy = false;
+    if (Math.abs(alphaFG  - targetFG)  > 0.005) { alphaFG  += (targetFG  - alphaFG)  * spd; fadeBusy = true; } else alphaFG  = targetFG;
+    if (Math.abs(alphaSPY - targetSPY) > 0.005) { alphaSPY += (targetSPY - alphaSPY) * spd; fadeBusy = true; } else alphaSPY = targetSPY;
+    draw();
+    animFrame = requestAnimationFrame(loop);
   }
-  animFrame = requestAnimationFrame(step);
+  animFrame = requestAnimationFrame(loop);
 }
 
 function replay() { startAnimation(); }
@@ -5381,16 +5385,7 @@ function setMode(m) {
   });
   targetFG  = (m === 'both' || m === 'fg')  ? 1 : 0;
   targetSPY = (m === 'both' || m === 'spy') ? 1 : 0;
-  if (fadeRAF) cancelAnimationFrame(fadeRAF);
-  function step() {
-    let busy = false;
-    const spd = 0.18;
-    if (Math.abs(alphaFG  - targetFG)  > 0.005) { alphaFG  += (targetFG  - alphaFG)  * spd; busy = true; } else alphaFG  = targetFG;
-    if (Math.abs(alphaSPY - targetSPY) > 0.005) { alphaSPY += (targetSPY - alphaSPY) * spd; busy = true; } else alphaSPY = targetSPY;
-    draw();
-    if (busy) fadeRAF = requestAnimationFrame(step);
-  }
-  fadeRAF = requestAnimationFrame(step);
+  // Continuous loop (started by startAnimation) handles alpha transitions automatically
 }
 
 // ═══════════════════════════════════════════════════════
@@ -5448,6 +5443,13 @@ window._occReady = false;
 window._startOccSim = function() {
   if (!window._occReady) {
     window._occReady = true;
+    resize();
+    setTimeout(startAnimation, 200);
+  }
+};
+
+})();
+
     resize();
     setTimeout(startAnimation, 200);
   }
