@@ -1,0 +1,1005 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TL1A Receptor Occupancy — SPY002 vs First-Gen</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg: #0D1117;
+  --surface: #161B22;
+  --surface2: #1C2128;
+  --border: #30363D;
+  --text-primary: #E6EDF3;
+  --text-muted: #8B949E;
+  --orange: #F97316;
+  --orange-soft: rgba(249,115,22,0.18);
+  --teal: #2DD4BF;
+  --teal-soft: rgba(45,212,191,0.14);
+  --red-gap: rgba(239,68,68,0.13);
+}
+
+body {
+  background: var(--bg);
+  color: var(--text-primary);
+  font-family: 'Inter', system-ui, sans-serif;
+  min-height: 100vh;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 28px 16px 36px;
+}
+
+.sim-wrapper {
+  width: 100%;
+  max-width: 940px;
+}
+
+/* ── Header ── */
+.sim-header {
+  text-align: center;
+  margin-bottom: 22px;
+}
+.sim-title {
+  font-size: 24px;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+  color: var(--text-primary);
+  margin-bottom: 7px;
+}
+.sim-subtitle {
+  font-size: 13px;
+  color: var(--text-muted);
+  font-weight: 400;
+  letter-spacing: 0.1px;
+  line-height: 1.5;
+}
+
+/* ── Toggle ── */
+.toggle-bar {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 16px;
+}
+.toggle-inner {
+  display: flex;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 3px;
+  gap: 2px;
+}
+.toggle-btn {
+  padding: 6px 18px;
+  font-size: 12px;
+  font-weight: 600;
+  font-family: 'Inter', sans-serif;
+  background: transparent;
+  color: var(--text-muted);
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.18s, color 0.18s;
+  letter-spacing: 0.3px;
+  outline: none;
+}
+.toggle-btn:hover { color: var(--text-primary); }
+.toggle-btn.active-both { background: rgba(255,255,255,0.09); color: var(--text-primary); }
+.toggle-btn.active-fg   { background: rgba(249,115,22,0.20); color: var(--orange); }
+.toggle-btn.active-spy  { background: rgba(45,212,191,0.18); color: var(--teal); }
+
+/* ── Canvas ── */
+.canvas-wrap {
+  position: relative;
+  width: 100%;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  cursor: crosshair;
+  user-select: none;
+}
+canvas {
+  display: block;
+  width: 100%;
+  height: 420px;
+}
+
+/* ── Flash labels (inside canvas) ── */
+.flash-label {
+  position: absolute;
+  font-size: 11px;
+  font-weight: 700;
+  font-family: 'Inter', sans-serif;
+  padding: 3px 9px;
+  border-radius: 4px;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.25s;
+  white-space: nowrap;
+  letter-spacing: 0.2px;
+  z-index: 10;
+}
+.flash-gap   { background: rgba(239,68,68,0.22); color: #FCA5A5; border: 1px solid rgba(239,68,68,0.45); }
+.flash-cover { background: rgba(45,212,191,0.20); color: #99F6E4; border: 1px solid rgba(45,212,191,0.45); }
+
+/* ── Scrub hint ── */
+.scrub-hint {
+  text-align: center;
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-top: 7px;
+  letter-spacing: 0.1px;
+}
+
+/* ── Stat strips ── */
+.stat-strips {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 12px;
+}
+.stat-strip {
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  padding: 13px 16px;
+  background: var(--surface);
+}
+.stat-strip.fg  { border-color: rgba(249,115,22,0.30); }
+.stat-strip.spy { border-color: rgba(45,212,191,0.25); }
+.strip-drug {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  margin-bottom: 5px;
+}
+.strip-drug.fg  { color: var(--orange); }
+.strip-drug.spy { color: var(--teal); }
+.strip-stats {
+  font-size: 12px;
+  color: var(--text-muted);
+  font-weight: 400;
+  line-height: 1.7;
+}
+.strip-highlight {
+  font-weight: 600;
+  font-size: 12px;
+}
+.strip-highlight.bad  { color: #FCA5A5; }
+.strip-highlight.good { color: #99F6E4; }
+
+/* ── Counter strip ── */
+.counter-strip {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr auto 1fr;
+  align-items: center;
+  gap: 0;
+  margin-top: 10px;
+  background: #F1F5F9;
+  border-radius: 10px;
+  padding: 14px 20px;
+}
+.cstrip-divider {
+  width: 1px;
+  background: #CBD5E1;
+  align-self: stretch;
+  margin: 0 18px;
+}
+.counter-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.counter-val {
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: -0.7px;
+  font-variant-numeric: tabular-nums;
+}
+.counter-label {
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.1px;
+  line-height: 1.4;
+}
+.c-gap  { color: #B91C1C; }
+.c-cov  { color: #0F766E; }
+.c-inj  { color: #475569; }
+
+/* ── Replay ── */
+.replay-row {
+  display: flex;
+  justify-content: center;
+  margin-top: 14px;
+}
+.replay-btn {
+  padding: 8px 28px;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: 'Inter', sans-serif;
+  background: var(--surface);
+  color: var(--text-muted);
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  cursor: pointer;
+  letter-spacing: 0.2px;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+.replay-btn:hover {
+  background: rgba(255,255,255,0.07);
+  color: var(--text-primary);
+  border-color: rgba(255,255,255,0.25);
+}
+
+@media (max-width: 580px) {
+  .stat-strips { grid-template-columns: 1fr; }
+  .counter-strip { grid-template-columns: 1fr; gap: 10px; }
+  .cstrip-divider { display: none; }
+  .sim-title { font-size: 18px; }
+  canvas { height: 340px; }
+}
+</style>
+</head>
+<body>
+<div class="sim-wrapper">
+
+  <!-- Header -->
+  <div class="sim-header">
+    <div class="sim-title">Why Quarterly Dosing Matters</div>
+    <div class="sim-subtitle">TL1A Receptor Occupancy Over Time — First-Gen Anti-TL1A (Monthly) vs SPY002 YTE-Modified (Quarterly)</div>
+  </div>
+
+  <!-- Toggle -->
+  <div class="toggle-bar">
+    <div class="toggle-inner">
+      <button class="toggle-btn active-both" id="btn-both"  onclick="setMode('both')">Both</button>
+      <button class="toggle-btn"             id="btn-fg"    onclick="setMode('fg')">First-Gen Only</button>
+      <button class="toggle-btn"             id="btn-spy"   onclick="setMode('spy')">SPY002 Only</button>
+    </div>
+  </div>
+
+  <!-- Canvas -->
+  <div class="canvas-wrap" id="canvasWrap">
+    <canvas id="simCanvas"></canvas>
+    <div class="flash-label flash-gap"   id="flashGap">⚠ Coverage Gap — Breakthrough Inflammation Risk</div>
+    <div class="flash-label flash-cover" id="flashCover">✓ SPY002 Still Above Threshold</div>
+  </div>
+
+  <div class="scrub-hint">Hover or drag across the chart to inspect any day · Drag to scrub through time</div>
+
+  <!-- Stat strips -->
+  <div class="stat-strips">
+    <div class="stat-strip fg">
+      <div class="strip-drug fg">First-Gen Anti-TL1A (e.g. Tulisokibart)</div>
+      <div class="strip-stats">
+        Dosing: Monthly (every 30 days) &nbsp;·&nbsp; Half-life: 22 days<br>
+        <span class="strip-highlight bad">~84 days/year below therapeutic threshold</span><br>
+        ~12 injections/year &nbsp;·&nbsp; 12 coverage gaps
+      </div>
+    </div>
+    <div class="stat-strip spy">
+      <div class="strip-drug spy">SPY002 — Spyre Therapeutics (YTE-Modified)</div>
+      <div class="strip-stats">
+        Dosing: Quarterly (every 91 days) &nbsp;·&nbsp; Half-life: 75 days<br>
+        <span class="strip-highlight good">~12 days/year below therapeutic threshold</span><br>
+        4 injections/year &nbsp;·&nbsp; 7× better continuous coverage
+      </div>
+    </div>
+  </div>
+
+  <!-- Counter strip -->
+  <div class="counter-strip">
+    <div class="counter-item c-gap">
+      <div class="counter-val" id="gapDays">0</div>
+      <div class="counter-label">⚠ Days Below Threshold<br>First-Gen Anti-TL1A</div>
+    </div>
+    <div class="cstrip-divider"></div>
+    <div class="counter-item c-cov">
+      <div class="counter-val" id="covDays">0</div>
+      <div class="counter-label">✓ Days Above Threshold<br>SPY002 (Continuous Coverage)</div>
+    </div>
+    <div class="cstrip-divider"></div>
+    <div class="counter-item c-inj">
+      <div style="display:flex;gap:16px;align-items:baseline;">
+        <span class="counter-val" style="color:#C2410C;font-size:18px;" id="fgInj">0</span>
+        <span style="font-size:11px;color:#94A3B8;">vs</span>
+        <span class="counter-val" style="color:#0F766E;font-size:18px;" id="spyInj">0</span>
+      </div>
+      <div class="counter-label">First-Gen injections / SPY002 injections so far</div>
+    </div>
+  </div>
+
+  <!-- Replay -->
+  <div class="replay-row">
+    <button class="replay-btn" onclick="replay()">↺ &nbsp;Replay Animation</button>
+  </div>
+
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════
+//  PHARMACOKINETIC CONSTANTS
+// ═══════════════════════════════════════════════════════
+const HL_FG    = 22;   // first-gen half-life (days)
+const HL_SPY   = 75;   // SPY002 half-life (days)
+const DOSE_FG  = 30;   // monthly dosing interval
+const DOSE_SPY = 91;   // quarterly dosing interval (~13 weeks)
+const TOTAL_DAYS = 360;
+const THRESHOLD = 50;  // % receptor occupancy — therapeutic threshold
+
+const C_FG    = '#F97316';
+const C_SPY   = '#2DD4BF';
+const C_GRID  = 'rgba(255,255,255,0.055)';
+const C_THRESH = 'rgba(255,255,255,0.58)';
+const C_AXIS  = 'rgba(255,255,255,0.18)';
+
+// ═══════════════════════════════════════════════════════
+//  BUILD CURVE DATA
+// ═══════════════════════════════════════════════════════
+function buildCurve(halfLife, doseInterval) {
+  const data = new Float32Array(TOTAL_DAYS + 1);
+  let lastDose = 0;
+  const dosedays = [0];
+  for (let t = 0; t <= TOTAL_DAYS; t++) {
+    if (t > 0 && t % doseInterval === 0) {
+      lastDose = t;
+      dosedays.push(t);
+    }
+    data[t] = 100 * Math.pow(0.5, (t - lastDose) / halfLife);
+  }
+  return { data, dosedays };
+}
+
+const fgCurve  = buildCurve(HL_FG,  DOSE_FG);
+const spyCurve = buildCurve(HL_SPY, DOSE_SPY);
+
+// Gap segments for first-gen
+function getGapSegs(curveData) {
+  const segs = [];
+  let inGap = false, start = 0;
+  for (let t = 0; t <= TOTAL_DAYS; t++) {
+    if (!inGap && curveData[t] < THRESHOLD) { inGap = true; start = t; }
+    if (inGap && (curveData[t] >= THRESHOLD || t === TOTAL_DAYS)) {
+      segs.push({ start, end: t - 1 });
+      inGap = false;
+    }
+  }
+  return segs;
+}
+const fgGaps   = getGapSegs(fgCurve.data);
+const spyGaps  = getGapSegs(spyCurve.data);
+
+// ═══════════════════════════════════════════════════════
+//  CANVAS SETUP
+// ═══════════════════════════════════════════════════════
+const canvas = document.getElementById('simCanvas');
+const ctx    = canvas.getContext('2d');
+const wrap   = document.getElementById('canvasWrap');
+
+// Layout padding
+const PAD = { top: 54, right: 22, bottom: 56, left: 52 };
+let W, H, plotW, plotH, dpr;
+
+function resize() {
+  dpr = window.devicePixelRatio || 1;
+  const rect = canvas.getBoundingClientRect();
+  W = rect.width; H = rect.height;
+  canvas.width  = Math.round(W * dpr);
+  canvas.height = Math.round(H * dpr);
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  plotW = W - PAD.left - PAD.right;
+  plotH = H - PAD.top  - PAD.bottom;
+  draw();
+}
+
+// Coordinate helpers
+const dayToX = d => PAD.left + (d / TOTAL_DAYS) * plotW;
+const occToY = o => PAD.top  + (1 - Math.min(o, 100) / 100) * plotH;
+const xToDay = x => Math.round(((x - PAD.left) / plotW) * TOTAL_DAYS);
+
+// ═══════════════════════════════════════════════════════
+//  ANIMATION STATE
+// ═══════════════════════════════════════════════════════
+let animFrame = null;
+let drawDay   = 0;      // current draw head (0..TOTAL_DAYS)
+let animating = false;
+let hoverDay  = -1;
+let dragging  = false;
+const ANIM_SPD = 1.8;   // days per frame
+
+// Mode & fade
+let mode = 'both';
+let alphaFG = 1, alphaSPY = 1, targetFG = 1, targetSPY = 1;
+let fadeRAF = null;
+
+// ═══════════════════════════════════════════════════════
+//  DRAW FUNCTIONS
+// ═══════════════════════════════════════════════════════
+function draw() {
+  if (!W || !H) return;
+  ctx.clearRect(0, 0, W, H);
+  drawBG();
+  drawGrid();
+  drawThreshold();
+
+  const maxDay = Math.floor(animating ? drawDay : TOTAL_DAYS);
+
+  // Coverage fills first (behind lines)
+  if (alphaFG  > 0.01) drawFill('fg',  maxDay, alphaFG);
+  if (alphaSPY > 0.01) drawFill('spy', maxDay, alphaSPY);
+
+  // Curve lines on top
+  if (alphaFG  > 0.01) drawLine('fg',  maxDay, alphaFG);
+  if (alphaSPY > 0.01) drawLine('spy', maxDay, alphaSPY);
+
+  // Dose markers
+  drawDoseMarkers(maxDay);
+
+  // Legend
+  drawLegend();
+
+  // Axes + labels
+  drawAxes();
+  drawAxisLabels();
+
+  // Hover cursor
+  if (hoverDay >= 0 && hoverDay <= maxDay) drawCursor(hoverDay);
+
+  // Flash labels
+  updateFlashes(maxDay);
+
+  // Counters
+  updateCounters(maxDay);
+}
+
+function drawBG() {
+  ctx.fillStyle = '#0D1117';
+  ctx.fillRect(0, 0, W, H);
+  // subtle inner glow
+  const g = ctx.createRadialGradient(W * 0.5, H * 0.4, 0, W * 0.5, H * 0.5, Math.max(W, H) * 0.7);
+  g.addColorStop(0, 'rgba(45,212,191,0.022)');
+  g.addColorStop(1, 'transparent');
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, W, H);
+}
+
+function drawGrid() {
+  ctx.strokeStyle = C_GRID;
+  ctx.lineWidth = 1;
+  // Horizontal
+  [0, 25, 50, 75, 100].forEach(o => {
+    const y = occToY(o);
+    ctx.beginPath();
+    ctx.moveTo(PAD.left, y); ctx.lineTo(PAD.left + plotW, y);
+    ctx.stroke();
+  });
+  // Vertical every 90 days
+  [0, 90, 180, 270, 360].forEach(d => {
+    const x = dayToX(d);
+    ctx.beginPath();
+    ctx.moveTo(x, PAD.top); ctx.lineTo(x, PAD.top + plotH);
+    ctx.stroke();
+  });
+}
+
+function drawThreshold() {
+  const y = occToY(THRESHOLD);
+  ctx.save();
+  ctx.strokeStyle = C_THRESH;
+  ctx.lineWidth = 1.5;
+  ctx.setLineDash([7, 6]);
+  ctx.beginPath();
+  ctx.moveTo(PAD.left, y); ctx.lineTo(PAD.left + plotW, y);
+  ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.restore();
+
+  // Right-side label
+  ctx.save();
+  ctx.font = '500 10px Inter, sans-serif';
+  ctx.fillStyle = 'rgba(255,255,255,0.50)';
+  ctx.textAlign = 'left';
+  // Put label to the RIGHT of the plot area, or above line on right end
+  const labelText = 'Therapeutic Threshold (~50%)';
+  ctx.fillText(labelText, PAD.left + plotW - ctx.measureText(labelText).width - 2, y - 5);
+  ctx.restore();
+}
+
+function drawFill(drug, maxDay, alpha) {
+  const isFG = drug === 'fg';
+  const curve = isFG ? fgCurve.data : spyCurve.data;
+  const gaps  = isFG ? fgGaps       : spyGaps;
+  if (maxDay <= 0) return;
+  const end = Math.min(maxDay, TOTAL_DAYS);
+
+  ctx.save();
+  ctx.globalAlpha = alpha;
+
+  // -- ABOVE-THRESHOLD fill (coverage maintained) --
+  {
+    ctx.beginPath();
+    ctx.moveTo(dayToX(0), occToY(curve[0]));
+    for (let d = 1; d <= end; d++) ctx.lineTo(dayToX(d), occToY(curve[d]));
+    ctx.lineTo(dayToX(end), occToY(THRESHOLD));
+    ctx.lineTo(dayToX(0), occToY(THRESHOLD));
+    ctx.closePath();
+
+    // Clip to above-threshold region
+    ctx.save();
+    const clip = new Path2D();
+    clip.rect(PAD.left, PAD.top, plotW, occToY(THRESHOLD) - PAD.top);
+    ctx.clip(clip);
+    ctx.fillStyle = isFG ? 'rgba(249,115,22,0.12)' : 'rgba(45,212,191,0.11)';
+    ctx.fill();
+    ctx.restore();
+  }
+
+  // -- BELOW-THRESHOLD gap fill (red for FG, slightly different for SPY) --
+  gaps.forEach(({ start, end: gEnd }) => {
+    if (start > end) return;
+    const clampEnd = Math.min(gEnd, end);
+
+    ctx.save();
+    // Clip to below-threshold region
+    const bClip = new Path2D();
+    bClip.rect(PAD.left, occToY(THRESHOLD), plotW, plotH - (occToY(THRESHOLD) - PAD.top));
+    ctx.clip(bClip);
+
+    ctx.beginPath();
+    ctx.moveTo(dayToX(start), occToY(curve[start]));
+    for (let d = start + 1; d <= clampEnd; d++) ctx.lineTo(dayToX(d), occToY(curve[d]));
+    ctx.lineTo(dayToX(clampEnd), occToY(THRESHOLD));
+    // Walk back along threshold
+    ctx.lineTo(dayToX(start), occToY(THRESHOLD));
+    ctx.closePath();
+
+    ctx.fillStyle = isFG
+      ? 'rgba(239,68,68,0.20)'
+      : 'rgba(239,68,68,0.12)';
+    ctx.fill();
+    ctx.restore();
+  });
+
+  ctx.restore();
+}
+
+function drawLine(drug, maxDay, alpha) {
+  const isFG = drug === 'fg';
+  const curve = isFG ? fgCurve.data : spyCurve.data;
+  if (maxDay <= 0) return;
+  const end = Math.min(maxDay, TOTAL_DAYS);
+
+  ctx.save();
+  ctx.globalAlpha = alpha;
+
+  // Glow effect for active curve
+  ctx.shadowColor = isFG ? C_FG : C_SPY;
+  ctx.shadowBlur = 4;
+
+  ctx.beginPath();
+  ctx.moveTo(dayToX(0), occToY(curve[0]));
+  for (let d = 1; d <= end; d++) ctx.lineTo(dayToX(d), occToY(curve[d]));
+
+  ctx.strokeStyle = isFG ? C_FG : C_SPY;
+  ctx.lineWidth   = isFG ? 2 : 2.5;
+  ctx.lineJoin    = 'round';
+  ctx.lineCap     = 'round';
+  ctx.stroke();
+
+  ctx.restore();
+}
+
+function drawDoseMarkers(maxDay) {
+  // SPY002 markers (larger, teal, higher up)
+  if (alphaSPY > 0.01) {
+    ctx.save();
+    ctx.globalAlpha = alphaSPY;
+    spyCurve.dosedays.filter(d => d <= maxDay).forEach(d => {
+      const x = dayToX(d);
+      // Dot
+      ctx.beginPath();
+      ctx.arc(x, PAD.top - 20, 5.5, 0, Math.PI * 2);
+      ctx.fillStyle = C_SPY;
+      ctx.fill();
+      // Stem
+      ctx.strokeStyle = C_SPY;
+      ctx.globalAlpha = alphaSPY * 0.3;
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.moveTo(x, PAD.top - 14.5);
+      ctx.lineTo(x, PAD.top + 6);
+      ctx.stroke();
+      ctx.globalAlpha = alphaSPY;
+      // Label "Q" for quarterly injection
+      ctx.font = '600 8px Inter, sans-serif';
+      ctx.fillStyle = '#0D1117';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('Q', x, PAD.top - 20);
+      ctx.textBaseline = 'alphabetic';
+    });
+    ctx.restore();
+  }
+
+  // First-Gen markers (smaller, orange, slightly lower)
+  if (alphaFG > 0.01) {
+    ctx.save();
+    ctx.globalAlpha = alphaFG;
+    fgCurve.dosedays.filter(d => d <= maxDay).forEach(d => {
+      const x = dayToX(d);
+      ctx.beginPath();
+      ctx.arc(x, PAD.top - 8, 3.5, 0, Math.PI * 2);
+      ctx.fillStyle = C_FG;
+      ctx.fill();
+      ctx.strokeStyle = C_FG;
+      ctx.globalAlpha = alphaFG * 0.25;
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(x, PAD.top - 4.5);
+      ctx.lineTo(x, PAD.top + 4);
+      ctx.stroke();
+      ctx.globalAlpha = alphaFG;
+    });
+    ctx.restore();
+  }
+}
+
+function drawLegend() {
+  const y = PAD.top - 36;
+  ctx.font = '500 10.5px Inter, sans-serif';
+
+  if (alphaFG > 0.01) {
+    ctx.save();
+    ctx.globalAlpha = alphaFG;
+    // Dot
+    ctx.beginPath();
+    ctx.arc(PAD.left + 8, y + 2, 4, 0, Math.PI * 2);
+    ctx.fillStyle = C_FG;
+    ctx.fill();
+    ctx.fillStyle = 'rgba(249,115,22,0.85)';
+    ctx.textAlign = 'left';
+    ctx.fillText('First-Gen Anti-TL1A  ·  Monthly  ·  22-day HL', PAD.left + 18, y + 6);
+    ctx.restore();
+  }
+
+  if (alphaSPY > 0.01) {
+    ctx.save();
+    ctx.globalAlpha = alphaSPY;
+    const xRight = PAD.left + plotW;
+    const label = 'SPY002 (YTE)  ·  Quarterly  ·  75-day HL';
+    ctx.font = '500 10.5px Inter, sans-serif';
+    const lw = ctx.measureText(label).width;
+    ctx.beginPath();
+    ctx.arc(xRight - lw - 14, y + 2, 4, 0, Math.PI * 2);
+    ctx.fillStyle = C_SPY;
+    ctx.fill();
+    ctx.fillStyle = 'rgba(45,212,191,0.85)';
+    ctx.textAlign = 'left';
+    ctx.fillText(label, xRight - lw - 4, y + 6);
+    ctx.restore();
+  }
+}
+
+function drawAxes() {
+  ctx.strokeStyle = C_AXIS;
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(PAD.left, PAD.top);
+  ctx.lineTo(PAD.left, PAD.top + plotH);
+  ctx.lineTo(PAD.left + plotW, PAD.top + plotH);
+  ctx.stroke();
+}
+
+function drawAxisLabels() {
+  ctx.font = '400 10px Inter, sans-serif';
+  ctx.fillStyle = 'rgba(255,255,255,0.42)';
+
+  // Y-axis values
+  ctx.textAlign = 'right';
+  [0, 25, 50, 75, 100].forEach(o => {
+    ctx.fillText(o + '%', PAD.left - 7, occToY(o) + 4);
+  });
+
+  // Y-axis title
+  ctx.save();
+  ctx.translate(13, PAD.top + plotH / 2);
+  ctx.rotate(-Math.PI / 2);
+  ctx.textAlign = 'center';
+  ctx.font = '400 10px Inter, sans-serif';
+  ctx.fillStyle = 'rgba(255,255,255,0.35)';
+  ctx.fillText('Receptor Occupancy (%)', 0, 0);
+  ctx.restore();
+
+  // X-axis day labels
+  ctx.textAlign = 'center';
+  ctx.fillStyle = 'rgba(255,255,255,0.42)';
+  ctx.font = '400 10px Inter, sans-serif';
+  [0, 90, 180, 270, 360].forEach(d => {
+    ctx.fillText('Day ' + d, dayToX(d), PAD.top + plotH + 15);
+  });
+
+  // Quarter labels
+  ctx.fillStyle = 'rgba(255,255,255,0.22)';
+  ctx.font = '400 9px Inter, sans-serif';
+  ['Q1', 'Q2', 'Q3', 'Q4'].forEach((q, i) => {
+    ctx.fillText(q, dayToX(45 + i * 90), PAD.top + plotH + 27);
+  });
+
+  // X-axis title
+  ctx.fillStyle = 'rgba(255,255,255,0.35)';
+  ctx.font = '400 10px Inter, sans-serif';
+  ctx.fillText('Time (Days)', PAD.left + plotW / 2, PAD.top + plotH + 42);
+}
+
+// ── Tooltip / cursor ─────────────────────────────────────────────────────────
+function drawCursor(day) {
+  const x = dayToX(day);
+  const fgO  = fgCurve.data[Math.min(day, TOTAL_DAYS)];
+  const spyO = spyCurve.data[Math.min(day, TOTAL_DAYS)];
+
+  // Vertical line
+  ctx.save();
+  ctx.strokeStyle = 'rgba(255,255,255,0.30)';
+  ctx.lineWidth = 1;
+  ctx.setLineDash([4, 4]);
+  ctx.beginPath();
+  ctx.moveTo(x, PAD.top); ctx.lineTo(x, PAD.top + plotH);
+  ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.restore();
+
+  // Determine how many rows the tooltip needs
+  const showFG  = alphaFG  > 0.3 && (mode === 'both' || mode === 'fg');
+  const showSPY = alphaSPY > 0.3 && (mode === 'both' || mode === 'spy');
+  const rows = 1 + (showFG ? 1 : 0) + (showFG && fgO < THRESHOLD ? 1 : 0)
+                 + (showSPY ? 1 : 0) + (showSPY && spyO < THRESHOLD ? 1 : 0);
+  const ttW = 180, ttH = 16 + rows * 17, pad = 10;
+  let ttX = x + 12;
+  if (ttX + ttW > PAD.left + plotW - 4) ttX = x - ttW - 12;
+  let ttY = PAD.top + 8;
+
+  // Box
+  ctx.save();
+  ctx.fillStyle = 'rgba(22,27,34,0.94)';
+  ctx.strokeStyle = 'rgba(255,255,255,0.12)';
+  ctx.lineWidth = 1;
+  rrect(ctx, ttX, ttY, ttW, ttH, 7);
+  ctx.fill(); ctx.stroke();
+
+  let ry = ttY + pad + 11;
+  ctx.font = '600 11px Inter, sans-serif';
+  ctx.fillStyle = 'rgba(255,255,255,0.92)';
+  ctx.textAlign = 'left';
+  ctx.fillText('Day ' + day, ttX + pad, ry); ry += 17;
+
+  if (showFG) {
+    ctx.font = '500 11px Inter, sans-serif';
+    ctx.fillStyle = C_FG;
+    ctx.fillText('First-Gen: ' + fgO.toFixed(1) + '%', ttX + pad, ry); ry += 14;
+    if (fgO < THRESHOLD) {
+      ctx.font = '600 10px Inter, sans-serif';
+      ctx.fillStyle = 'rgba(252,165,165,0.85)';
+      ctx.fillText('⚠ Below threshold', ttX + pad + 2, ry); ry += 15;
+    }
+  }
+  if (showSPY) {
+    ctx.font = '500 11px Inter, sans-serif';
+    ctx.fillStyle = C_SPY;
+    ctx.fillText('SPY002: ' + spyO.toFixed(1) + '%', ttX + pad, ry); ry += 14;
+    if (spyO < THRESHOLD) {
+      ctx.font = '600 10px Inter, sans-serif';
+      ctx.fillStyle = 'rgba(252,165,165,0.85)';
+      ctx.fillText('⚠ Below threshold', ttX + pad + 2, ry);
+    } else {
+      ctx.font = '600 10px Inter, sans-serif';
+      ctx.fillStyle = 'rgba(153,246,228,0.85)';
+      ctx.fillText('✓ Covered', ttX + pad + 2, ry);
+    }
+  }
+  ctx.restore();
+
+  // Intersection dots
+  if (showFG) {
+    ctx.save();
+    ctx.globalAlpha = alphaFG;
+    ctx.beginPath();
+    ctx.arc(x, occToY(fgO), 5.5, 0, Math.PI * 2);
+    ctx.fillStyle = C_FG;
+    ctx.fill();
+    ctx.strokeStyle = '#0D1117'; ctx.lineWidth = 1.5; ctx.stroke();
+    ctx.restore();
+  }
+  if (showSPY) {
+    ctx.save();
+    ctx.globalAlpha = alphaSPY;
+    ctx.beginPath();
+    ctx.arc(x, occToY(spyO), 5.5, 0, Math.PI * 2);
+    ctx.fillStyle = C_SPY;
+    ctx.fill();
+    ctx.strokeStyle = '#0D1117'; ctx.lineWidth = 1.5; ctx.stroke();
+    ctx.restore();
+  }
+}
+
+function rrect(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.lineTo(x + w - r, y);
+  ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+  ctx.lineTo(x + w, y + h - r);
+  ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+  ctx.lineTo(x + r, y + h);
+  ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+  ctx.lineTo(x, y + r);
+  ctx.quadraticCurveTo(x, y, x + r, y);
+  ctx.closePath();
+}
+
+// ═══════════════════════════════════════════════════════
+//  FLASH LABELS & COUNTERS
+// ═══════════════════════════════════════════════════════
+const flashGapEl   = document.getElementById('flashGap');
+const flashCoverEl = document.getElementById('flashCover');
+
+function updateFlashes(maxDay) {
+  const day = Math.min(maxDay, TOTAL_DAYS);
+  const fgO  = fgCurve.data[day];
+  const spyO = spyCurve.data[day];
+
+  // Coverage gap flash for first-gen (when actively below threshold)
+  const gapActive = fgO < THRESHOLD && (mode === 'both' || mode === 'fg') && alphaFG > 0.5;
+  if (gapActive) {
+    flashGapEl.style.opacity = '1';
+    const x = Math.min(dayToX(day) + 8, W - 150);
+    const y = occToY(fgO) + 10;
+    flashGapEl.style.left = x + 'px';
+    flashGapEl.style.top  = y + 'px';
+  } else {
+    flashGapEl.style.opacity = '0';
+  }
+
+  // "Still covered" flash for SPY002 — show at day 70, 161, 252 (SPY002 exactly at 50% threshold milestone)
+  // Day 70 = when FG needs 3rd injection but SPY002 is still just above 50%
+  const coverMilestones = [70, 161, 252];
+  const activeMilestone = coverMilestones.find(m => maxDay >= m && maxDay <= m + 5);
+  const spyCoverActive = activeMilestone !== undefined
+    && spyCurve.data[activeMilestone] >= THRESHOLD
+    && (mode === 'both' || mode === 'spy')
+    && alphaSPY > 0.5;
+  if (spyCoverActive) {
+    flashCoverEl.style.opacity = '1';
+    const x = Math.min(dayToX(activeMilestone) + 8, W - 160);
+    const y = occToY(spyCurve.data[activeMilestone]) - 30;
+    flashCoverEl.style.left = x + 'px';
+    flashCoverEl.style.top  = Math.max(PAD.top + 4, y) + 'px';
+  } else {
+    flashCoverEl.style.opacity = '0';
+  }
+}
+
+function updateCounters(maxDay) {
+  const day = Math.min(maxDay, TOTAL_DAYS);
+
+  // Days below threshold
+  let fgBelow = 0, spyAbove = 0;
+  for (let d = 0; d <= day; d++) {
+    if (fgCurve.data[d]  < THRESHOLD) fgBelow++;
+    if (spyCurve.data[d] >= THRESHOLD) spyAbove++;
+  }
+  document.getElementById('gapDays').textContent = fgBelow;
+  document.getElementById('covDays').textContent  = spyAbove;
+
+  // Injection counts
+  document.getElementById('fgInj').textContent  = fgCurve.dosedays.filter(d => d <= day).length;
+  document.getElementById('spyInj').textContent = spyCurve.dosedays.filter(d => d <= day).length;
+}
+
+// ═══════════════════════════════════════════════════════
+//  ANIMATION
+// ═══════════════════════════════════════════════════════
+function startAnimation() {
+  if (animFrame) cancelAnimationFrame(animFrame);
+  drawDay = 0;
+  animating = true;
+  function step() {
+    drawDay = Math.min(drawDay + ANIM_SPD, TOTAL_DAYS);
+    draw();
+    if (drawDay < TOTAL_DAYS) {
+      animFrame = requestAnimationFrame(step);
+    } else {
+      animating = false;
+      draw();
+    }
+  }
+  animFrame = requestAnimationFrame(step);
+}
+
+function replay() { startAnimation(); }
+
+// ═══════════════════════════════════════════════════════
+//  MODE TOGGLE (with fade)
+// ═══════════════════════════════════════════════════════
+function setMode(m) {
+  if (mode === m) return;
+  mode = m;
+  ['both','fg','spy'].forEach(id => {
+    const btn = document.getElementById('btn-' + id);
+    btn.className = 'toggle-btn' + (m === id ? ' active-' + id : '');
+  });
+  targetFG  = (m === 'both' || m === 'fg')  ? 1 : 0;
+  targetSPY = (m === 'both' || m === 'spy') ? 1 : 0;
+  if (fadeRAF) cancelAnimationFrame(fadeRAF);
+  function step() {
+    let busy = false;
+    const spd = 0.18;
+    if (Math.abs(alphaFG  - targetFG)  > 0.005) { alphaFG  += (targetFG  - alphaFG)  * spd; busy = true; } else alphaFG  = targetFG;
+    if (Math.abs(alphaSPY - targetSPY) > 0.005) { alphaSPY += (targetSPY - alphaSPY) * spd; busy = true; } else alphaSPY = targetSPY;
+    draw();
+    if (busy) fadeRAF = requestAnimationFrame(step);
+  }
+  fadeRAF = requestAnimationFrame(step);
+}
+
+// ═══════════════════════════════════════════════════════
+//  INTERACTION
+// ═══════════════════════════════════════════════════════
+function getDay(clientX) {
+  const rect = canvas.getBoundingClientRect();
+  const x = clientX - rect.left;
+  const maxAllowed = animating ? Math.floor(drawDay) : TOTAL_DAYS;
+  return Math.max(0, Math.min(xToDay(x), maxAllowed, TOTAL_DAYS));
+}
+
+canvas.addEventListener('mousemove', e => {
+  hoverDay = getDay(e.clientX);
+  if (!animating) draw();
+});
+canvas.addEventListener('mouseleave', () => {
+  if (!dragging) { hoverDay = -1; if (!animating) draw(); }
+});
+canvas.addEventListener('mousedown', e => {
+  dragging = true;
+  hoverDay = getDay(e.clientX);
+  if (!animating) draw();
+  // If animation done, allow scrubbing back in time
+  if (!animating) {
+    canvas.addEventListener('mousemove', scrubHandler);
+  }
+});
+canvas.addEventListener('mouseup', () => {
+  dragging = false;
+  canvas.removeEventListener('mousemove', scrubHandler);
+});
+function scrubHandler(e) {
+  if (!dragging) return;
+  hoverDay = getDay(e.clientX);
+  draw();
+}
+
+// Touch
+canvas.addEventListener('touchmove', e => {
+  e.preventDefault();
+  hoverDay = getDay(e.touches[0].clientX);
+  if (!animating) draw();
+}, { passive: false });
+canvas.addEventListener('touchend', () => { hoverDay = -1; if (!animating) draw(); });
+
+// ═══════════════════════════════════════════════════════
+//  RESIZE + INIT
+// ═══════════════════════════════════════════════════════
+const ro = new ResizeObserver(() => { resize(); });
+ro.observe(wrap);
+
+window.addEventListener('load', () => {
+  resize();
+  setTimeout(startAnimation, 400);
+});
+</script>
+</body>
+</html>
