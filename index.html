@@ -1463,7 +1463,7 @@ input[type="range"]::-moz-range-thumb {
   border-radius: 12px;
   overflow: hidden;
   border: 1px solid var(--border);
-  background: #0D1117;
+  background: #FFFFFF;
   cursor: crosshair;
   user-select: none;
 }
@@ -4775,9 +4775,9 @@ const THRESHOLD = 50;  // % receptor occupancy, therapeutic threshold
 
 const C_FG    = '#F97316';
 const C_SPY   = '#2DD4BF';
-const C_GRID  = 'rgba(255,255,255,0.055)';
-const C_THRESH = 'rgba(255,255,255,0.58)';
-const C_AXIS  = 'rgba(255,255,255,0.18)';
+const C_GRID  = 'rgba(0,0,0,0.07)';
+const C_THRESH = 'rgba(0,0,0,0.35)';
+const C_AXIS  = 'rgba(0,0,0,0.18)';
 
 // ═══════════════════════════════════════════════════════
 //  BUILD CURVE DATA
@@ -4899,7 +4899,7 @@ function draw() {
 }
 
 function drawBG() {
-  ctx.fillStyle = '#0D1117';
+  ctx.fillStyle = '#FFFFFF';
   ctx.fillRect(0, 0, W, H);
   // subtle inner glow
   const g = ctx.createRadialGradient(W * 0.5, H * 0.4, 0, W * 0.5, H * 0.5, Math.max(W, H) * 0.7);
@@ -4943,7 +4943,7 @@ function drawThreshold() {
   // Right-side label
   ctx.save();
   ctx.font = '500 10px Inter, sans-serif';
-  ctx.fillStyle = 'rgba(255,255,255,0.50)';
+  ctx.fillStyle = 'rgba(0,0,0,0.45)';
   ctx.textAlign = 'left';
   // Put label to the RIGHT of the plot area, or above line on right end
   const labelText = 'Therapeutic Threshold (~50%)';
@@ -4975,7 +4975,7 @@ function drawFill(drug, maxDay, alpha) {
     const clip = new Path2D();
     clip.rect(PAD.left, PAD.top, plotW, occToY(THRESHOLD) - PAD.top);
     ctx.clip(clip);
-    ctx.fillStyle = isFG ? 'rgba(249,115,22,0.12)' : 'rgba(45,212,191,0.11)';
+    ctx.fillStyle = isFG ? 'rgba(249,115,22,0.10)' : 'rgba(45,212,191,0.10)';
     ctx.fill();
     ctx.restore();
   }
@@ -5058,7 +5058,7 @@ function drawDoseMarkers(maxDay) {
       ctx.globalAlpha = alphaSPY;
       // Label "Q" for quarterly injection
       ctx.font = '600 8px Inter, sans-serif';
-      ctx.fillStyle = '#0D1117';
+      ctx.fillStyle = '#FFFFFF';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       ctx.fillText('Q', x, PAD.top - 20);
@@ -5138,7 +5138,7 @@ function drawAxes() {
 
 function drawAxisLabels() {
   ctx.font = '400 10px Inter, sans-serif';
-  ctx.fillStyle = 'rgba(255,255,255,0.42)';
+  ctx.fillStyle = 'rgba(0,0,0,0.50)';
 
   // Y-axis values
   ctx.textAlign = 'right';
@@ -5152,27 +5152,27 @@ function drawAxisLabels() {
   ctx.rotate(-Math.PI / 2);
   ctx.textAlign = 'center';
   ctx.font = '400 10px Inter, sans-serif';
-  ctx.fillStyle = 'rgba(255,255,255,0.35)';
+  ctx.fillStyle = 'rgba(0,0,0,0.45)';
   ctx.fillText('Receptor Occupancy (%)', 0, 0);
   ctx.restore();
 
   // X-axis day labels
   ctx.textAlign = 'center';
-  ctx.fillStyle = 'rgba(255,255,255,0.42)';
+  ctx.fillStyle = 'rgba(0,0,0,0.50)';
   ctx.font = '400 10px Inter, sans-serif';
   [0, 90, 180, 270, 360].forEach(d => {
     ctx.fillText('Day ' + d, dayToX(d), PAD.top + plotH + 15);
   });
 
   // Quarter labels
-  ctx.fillStyle = 'rgba(255,255,255,0.22)';
+  ctx.fillStyle = 'rgba(0,0,0,0.30)';
   ctx.font = '400 9px Inter, sans-serif';
   ['Q1', 'Q2', 'Q3', 'Q4'].forEach((q, i) => {
     ctx.fillText(q, dayToX(45 + i * 90), PAD.top + plotH + 27);
   });
 
   // X-axis title
-  ctx.fillStyle = 'rgba(255,255,255,0.35)';
+  ctx.fillStyle = 'rgba(0,0,0,0.45)';
   ctx.font = '400 10px Inter, sans-serif';
   ctx.fillText('Time (Days)', PAD.left + plotW / 2, PAD.top + plotH + 42);
 }
@@ -5185,7 +5185,7 @@ function drawCursor(day) {
 
   // Vertical line
   ctx.save();
-  ctx.strokeStyle = 'rgba(255,255,255,0.30)';
+  ctx.strokeStyle = 'rgba(0,0,0,0.12)';
   ctx.lineWidth = 1;
   ctx.setLineDash([4, 4]);
   ctx.beginPath();
@@ -5206,15 +5206,15 @@ function drawCursor(day) {
 
   // Box
   ctx.save();
-  ctx.fillStyle = 'rgba(22,27,34,0.94)';
-  ctx.strokeStyle = 'rgba(255,255,255,0.12)';
+  ctx.fillStyle = 'rgba(255,255,255,0.97)';
+  ctx.strokeStyle = 'rgba(0,0,0,0.12)';
   ctx.lineWidth = 1;
   rrect(ctx, ttX, ttY, ttW, ttH, 7);
   ctx.fill(); ctx.stroke();
 
   let ry = ttY + pad + 11;
   ctx.font = '600 11px Inter, sans-serif';
-  ctx.fillStyle = 'rgba(255,255,255,0.92)';
+  ctx.fillStyle = 'rgba(26,29,35,0.92)';
   ctx.textAlign = 'left';
   ctx.fillText('Day ' + day, ttX + pad, ry); ry += 17;
 
